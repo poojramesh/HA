@@ -1,0 +1,23 @@
+---
+
+ - name: De-Register instances with ELB
+   ec2_elb:
+     instance_id: "{{ item }}"
+     ec2_elbs: "{{ Vvpc_name }}ELB"
+     state: absent
+     validate_certs: no
+     wait: yes
+     region: "{{ Vregion }}"
+   with_items:
+    - "{{ Vdereg_ec2id }}"
+   register: Rdereg
+
+ - name: terminate the drained instances
+   ec2:
+     instance_ids: '{{ item }}'
+     region: '{{ Vregion }}'
+     state: absent
+     wait: True
+   with_items:
+    - "{{ Vdereg_ec2id }}"
+   register: Rec2ter

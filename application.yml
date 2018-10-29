@@ -1,0 +1,11 @@
+---
+- hosts: ej-esbserver
+  remote_user: ec2-user
+  become: yes
+  roles:
+#     - role: oraclejdk
+     - common
+#     - java
+     - fusestd
+     - maven
+     - serdeploy

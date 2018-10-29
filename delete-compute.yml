@@ -1,0 +1,10 @@
+---
+# file: compute.yml
+ - hosts: localhost
+   connection: local
+   gather_facts: true
+   pre_tasks:
+     - include_vars: blueprint/{{ Venvironment }}.yml
+   roles:
+    - common
+    - { role: del_ec2, Vblueprint: '{{ Venvironment }}.{{ Vstage }}' }

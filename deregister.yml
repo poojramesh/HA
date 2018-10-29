@@ -1,0 +1,14 @@
+---
+# file: compute.yml
+
+ - hosts: localhost
+   connection: local
+   gather_facts: true
+   vars_prompt:
+    - name: Vdereg_ec2id
+      prompt: "Please enter unhealthy instance id"
+      private: no
+#   become: yes
+   roles:
+    - common
+    - dereg

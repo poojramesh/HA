@@ -1,0 +1,14 @@
+---
+ - name: Add route to routing table
+   ec2_vpc_route_table:
+     vpc_id: "{{ Vmgmt_vpc_id }}"
+     region: "{{ Vregion }}"
+     lookup: id
+     route_table_id: "rtb-bf1668d8"
+     routes:
+      - dest: 15.0.0.0/16
+        vpc_peering_connection_id: "pcx-228c0b4b"
+      - dest: 0.0.0.0/0
+        gateway_id: igw
+   register: Raddroute
+ - debug: var=Raddroute

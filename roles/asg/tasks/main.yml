@@ -1,0 +1,20 @@
+---
+
+#File roles/asg/tasks/main.yml
+ - name: assign inventory
+   template: src='hosts.yml' dest='/home/ec2-user/ejdemo/hosts.yml'
+
+ - name: Initiate test and development autoscaling environment provisioning for "{{ Venvironment }}"
+   include: tnd.yml
+   static: no
+   when: Vstage is defined and Vstage == "TND"
+
+ - name: Initiate Pre-Production autoscaling environment provisioning for "{{ Venvironment }}"
+   include: ppd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PPD"
+
+ - name: Initiate Production autoscaling environment provisioning for "{{ Venvironment }}"
+   include: prd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PRD"

@@ -1,0 +1,123 @@
+---
+#File: roles/ec2/tasks/main.yml
+
+     - name: Set ESB ec2 count in AZs
+       set_fact:
+         Vweb_counta: '{{ (EI.PPD.Vweb_count / 2 ) | round | int }}'
+         Vweb_countb: '{{ EI.PPD.Vweb_count - (( EI.PPD.Vweb_count  / 2 )| round | int) }}'
+
+     - name: Create ESB EC2
+       ec2:
+         image: "{{ Vwebami }}"
+         instance_type: "{{ EI.PPD.Vinstance_type }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vwebsg_id }}"
+         count: '{{ item.0 | int}}'
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ item.1}}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vwebname }}" }
+         state: present
+       with_together:
+         - [ '{{ Vweb_counta }}', '{{ Vweb_countb }}' ]
+         - [ '{{ Vwebsn_ida }}', '{{ Vwebsn_idb }}' ]
+       register: Rweb
+     - debug: var=Rweb
+
+     - name: Set variables for ESB instance id and private ip
+       set_fact:
+         Vwebec2_ida: "{{ Rweb |json_query('results[0].instance_ids') }}"
+         Vwebec2_idb: "{{ Rweb |json_query('results[1].instance_ids') }}"
+         Vwebec2_ipa: "{{ Rweb |json_query('results[0].instances[].private_ip') }}"
+         Vwebec2_ipb: "{{ Rweb |json_query('results[1].instances[].private_ip') }}"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ida line='Vwebec2_ida: \"{{ Rweb |json_query('results[0].instance_ids') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_idb line='Vwebec2_idb: \"{{ Rweb |json_query('results[1].instance_ids') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ipa line='Vwebec2_ipa: \"{{ Rweb |json_query('results[0].instances[].private_ip') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ipb line='Vwebec2_ipb: \"{{ Rweb |json_query('results[1].instances[].private_ip') }}\"'"     
+    
+     - name: Set ESG inventory
+       lineinfile: dest='/home/ec2-user/hademo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-esbserver\]' line="{{ item }}" state=present
+       with_items:
+         - "{{ Vwebec2_ipa }}"
+         - "{{ Vwebec2_ipb }}"
+
+#     - lineinfile: dest='/etc/ansible/hosts' regexp=\"{{ Rweb |json_query('results[0].instances[].private_ip') }}\" insertafter='\[ej-esbserver\]' line=\"{{ Rweb |json_query('results[0].instances[].private_ip') }}\" state=present
+#     - lineinfile: dest='/etc/ansible/hosts' regexp=\"{{ Rweb |json_query('results[1].instances[].private_ip') }}\" insertafter='\[ej-esbserver\]' line=\"{{ Rweb |json_query('results[1].instances[].private_ip') }}\" state=present
+
+     - name: Set AMQ ec2 count in AZs
+       set_fact:
+         Vapp_counta: '{{ (EI.PPD.Vapp_count / 2 ) | round | int }}'
+         Vapp_countb: '{{ EI.PPD.Vapp_count - (( EI.PPD.Vapp_count  / 2 )| round | int) }}'
+
+     - name: Create AMQ EC2
+       ec2:
+         image: "{{ Vami }}"
+         instance_type: "{{ EI.PPD.Vinstance_type }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vappsg_id }}"
+         count: '{{ item.0 | int}}'
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ item.1 }}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vappname }}" }
+         state: present
+       with_together:
+         - [ '{{ Vapp_counta }}', '{{ Vapp_countb }}' ]
+         - [ '{{ Vappsn_ida }}', '{{ Vappsn_idb }}' ]
+       register: Rapp
+     - debug: var=Rapp
+
+     - name: Set variables for app instance id and private ip
+       set_fact:
+         Vappec2_ida: "{{ Rapp |json_query('results[0].instance_ids') }}"
+         Vappec2_idb: "{{ Rapp |json_query('results[1].instance_ids') }}"
+         Vappec2_ipa: "{{ Rapp |json_query('results[0].instances[].private_ip') }}"
+         Vappec2_ipb: "{{ Rapp |json_query('results[1].instances[].private_ip') }}"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ida line='Vappec2_ida: \"{{ Rapp |json_query('results[0].instance_ids') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_idb line='Vappec2_idb: \"{{ Rapp |json_query('results[1].instance_ids') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ipa line='Vappec2_ipa: \"{{ Rapp |json_query('results[0].instances[].private_ip') }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ipb line='Vappec2_ipb: \"{{ Rapp |json_query('results[1].instances[].private_ip') }}\"'"
+
+
+     - name: Set AMQ inventory
+       lineinfile: dest='/home/ec2-user/hademo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-amqserver\]' line="{{ item }}" state=present
+       with_items:
+           - "{{ Vappec2_ipa }}"
+           - "{{ Vappec2_ipb }}"
+
+
+
+     - name: Create DG EC2
+       ec2:
+         image: "{{ Vami }}"
+         instance_type: "{{ Vinstance_type }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vdbsg_id }}"
+         count: "{{ Vdb_count }}"
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ Vdbsn_id }}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vdbname }}" }
+         state: present
+       register: Rdb
+     - debug: var=Rdb
+
+     - name: Set variables for db instance id and private ip
+       set_fact:
+         Vdbec2_id: "{{ Rdb.instance_ids }}"
+         Vdbec2_ip: "{{ Rdb.instances.0.private_ip }}"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbec2_id line='Vdbec2_id: \"{{ Rdb.instance_ids }}\"'"
+     - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbec2_ip line='Vdbec2_ip: \"{{ Rdb.instances.0.private_ip }}\"'"
+     - lineinfile: dest='/home/ec2-user/hademo/hosts.yml' regexp=\"{{ Rdb.instances.0.private_ip }}\" insertafter='\[ej-dgserver\]' line=\"{{ Rdb.instances.0.private_ip }}\" state=present
+
+     - name: Wait for Service to be ready
+       wait_for:
+         host: "{{ Vwebec2_ipa.0 }}"
+         port: 80
+         delay: 10
+         timeout: 320
+         state: started
+...

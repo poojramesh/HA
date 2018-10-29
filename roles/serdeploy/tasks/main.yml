@@ -1,0 +1,15 @@
+---
+- name: Fuse |Check whether fuse is up
+  wait_for: port=8181 host=localhost delay=10 state=started
+- name: Fuse| run the build command
+  shell: /opt/apache-maven-3.2.3/bin/mvn clean install
+  environment:
+      JAVA_HOME: /opt/jdk1.8.0_112
+  args:
+    chdir: "{{FUSE_HOME}}/{{PROJECT_DIR}}"
+  register: project_build  
+- name: Fuse| Wait for 30 seconds
+  pause: seconds=30
+- name: Fuse|service deployment
+  include: servicedeploy.yml 
+  when: "'BUILD SUCCESS' in project_build.stdout"  

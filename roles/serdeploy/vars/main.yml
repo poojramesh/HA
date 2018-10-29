@@ -1,0 +1,6 @@
+---
+#Service deployment constants
+
+PROJECT_DIR: quickstarts/cxf/soap
+FUSE_HOME: /opt/rh/jboss-fuse-6.3.0.redhat-187
+

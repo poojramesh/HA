@@ -1,0 +1,92 @@
+# Variables declaration for VPC-nkv
+Vmgmt_vpc_id: "vpc-0b1727902a4183d52"
+Vmgmt_rt_id: "rtb-0cb3a1928a74100be"
+Vregion: "us-west-2"
+Vvpc_range: "100.0.0.0/8"
+Vvpc_id: "vpc-450bcb3d"
+Vvpc_name: "EITND63"
+Vvpc_cidr: "100.3.240.0/20"
+Vsubnet_cidr_pub: "100.0.10.0/24"
+Vsubnet_cidr_pri: "35.0.30.0/24"
+Vsubnet_cidr_nat: "100.3.252.0/24"
+Vnversion: 64
+Vrt_name_pub: 
+Vrt_name_pri: 
+Vrt_name_nat: 
+Vigw_name: 
+
+#Security Groups
+Vwebsg_id: "sg-dfa219ad"
+Vappsg_id: "sg-c7b209b5"
+Vdbsg_id: "sg-0b51ea79"
+Vpubsg_id: "sg-0d962d7f"
+
+
+#NAT Instance
+Vnat_ami: "ami-290f4119"
+Vnatec2_id: "i-01c0fb5e37ccfb57d"
+
+#Bastion Instance
+Vbastion_id: "[u'i-a877e73d']"
+Vbastion_dns: "ec2-54-244-182-101.us-west-2.compute.amazonaws.com"
+
+#EC2 and application
+Vami: "ami-f665478e"
+Vdgami: "ami-729dfb12"
+Vinstance_type: "t2.micro"
+Vkey_name: "tth-keypair"
+Vkey_path: "/home/ec2-user/tth-keypair.pem"
+Vwebec2_name: "testweb"
+Vwebec2_ida: "[u'i-3af7abae']"
+Vwebec2_idb: "[u'i-a5531330', u'i-a4531331']"
+Vwebec2_ipa: "[u'100.3.229.68']"
+Vwebec2_ipb: "[u'100.3.214.240', u'100.3.214.205']"
+Vwebsn_id: "subnet-44899b20"
+Vappec2_id: "[u'i-00d55f163210bc23f']"
+Vappec2_ip: "56.0.30.143"
+Vappsn_id: "subnet-27335c40"
+Vapp_count: 2
+
+
+# for asg
+Vwebsn_ida: "subnet-1a4d3251"
+Vwebsn_idb: "subnet-087c2e71"
+Vsubnet_cidr_puba: "100.3.253.0/24"
+Vsubnet_cidr_pubb: "100.3.254.0/24"
+
+Vweb_count: 2
+Vdbec2_name: "testdb"
+Vdbec2_id: "[u'i-c5f5a951']"
+Vdbec2_ip: "100.3.231.33"
+Vdbsn_id: "subnet-035f2048"
+Vdb_count: 1
+
+Vnatsn_id: "subnet-49433c02"
+Vpubsn_ida: "subnet-9f1548e6"
+Vpubsn_idb: "subnet-e87f00a3"
+
+
+#web Golden Image instances and AMI
+Vwebimage_id: "i-8c4a3b18"
+Vwebimage_ip: "54.202.253.233"
+Vwebami: "ami-f665478e"
+Vversion: "2"
+Vproj_name: demo
+Vvpcpeer_id: "pcx-59e24d31"
+Vsubnet_cidr_priDB: "100.3.247.0/24"
+Vsubnet_cidr_weba: "100.3.245.0/24"
+Vsubnet_cidr_webb: "100.3.214.0/24"
+Vwebname: "HA_WEB"
+Vappname: "HA_APP"
+Vdbname: "HA_DB"
+Vsubnet_cidr_priAPPa: "100.3.246.0/24"
+Vsubnet_cidr_priAPPb: "100.3.216.0/24"
+Vappsn_ida: "subnet-82bec1c9"
+Vappsn_idb: "subnet-e4cdb1af"
+Vappec2_ida: "[u'i-35f7aba1']"
+Vappec2_idb: "[u'i-7298c4e6']"
+Vappec2_ipa: "[u'100.3.230.139']"
+Vappec2_ipb: "[u'100.3.215.173']"
+Venvironment: "EI"
+Vstage: "TND"
+Vnatgw_id: "nat-09b99433de42f297c"

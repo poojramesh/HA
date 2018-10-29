@@ -1,0 +1,15 @@
+---
+#File: appupdates.yml
+
+ - hosts: localhost
+   connection: local
+   gather_facts: true
+   pre_tasks:
+     - include_vars: blueprint/{{ Venvironment }}.yml
+   vars_prompt:
+    - name: Vscaleup_ec2ip
+      prompt: "Please enter new instance private ip"
+      private: no
+   roles:
+    - common
+    - appupdates

@@ -1,0 +1,68 @@
+---
+  - name: Set ESB ec2 count in AZs
+    set_fact:
+      Vweb_counta: '{{ (EI.PPD.Vweb_count / 2 ) | round | int }}'
+      Vweb_countb: '{{ EI.PPD.Vweb_count - (( EI.PPD.Vweb_count  / 2 )| round | int) }}'
+
+  - name: Delete ESB EC2
+    ec2:
+      image: "{{ Vwebami }}"
+      instance_type: "{{ EI.PPD.Vinstance_type }}"
+      instance_id: "{{ Vwebec2_ida }}"
+      key_name: "{{ Vkey_name }}"
+      wait: yes
+      group_id: "{{ Vwebsg_id }}"
+      count: '{{ item.0 | int}}'
+      region: "{{ Vregion }}"
+      vpc_subnet_id: "{{ item.1}}"
+      instance_tags: { "Name":"{{ Vvpc_name }}{{ Vwebname }}" }
+      state: absent
+    with_together:
+        - [ '{{ Vweb_counta }}', '{{ Vweb_countb }}' ]
+        - [ '{{ Vwebsn_ida }}', '{{ Vwebsn_idb }}' ]
+    register: Rweb
+  - debug: var=Rweb
+
+  - name: Set AMQ ec2 count in AZs
+    set_fact:
+      Vapp_counta: '{{ (EI.PPD.Vapp_count / 2 ) | round | int }}'
+      Vapp_countb: '{{ EI.PPD.Vapp_count - (( EI.PPD.Vapp_count  / 2 )| round | int) }}'
+
+  - name: Delete AMQ EC2
+    vars:
+        instance_ids:
+          - "{{ Vappec2_ida }}"
+          - "{{ Vappec2_idb }}"
+    ec2:
+      image: "{{ Vami }}"
+      instance_type: "{{ EI.PPD.Vinstance_type }}"
+      key_name: "{{ Vkey_name }}"
+      instance_ids: '{{ instance_ids }}'
+      wait: yes
+      group_id: "{{ Vappsg_id }}"
+      count: '{{ item.0 | int}}'
+      region: "{{ Vregion }}"
+      vpc_subnet_id: "{{ item.1 }}"
+      instance_tags: { "Name":"{{ Vvpc_name }}{{ Vappname }}" }
+      state: absent
+    with_together:
+        - [ '{{ Vapp_counta }}', '{{ Vapp_countb }}' ]
+        - [ '{{ Vappsn_ida }}', '{{ Vappsn_idb }}' ]
+    register: Rapp
+  - debug: var=Rapp
+
+  - name: Delete DG EC2
+    ec2:
+      image: "{{ Vami }}"
+      instance_type: "{{ Vinstance_type }}"
+      instance_id: "{{ Vdbec2_id }}"
+      key_name: "{{ Vkey_name }}"
+      wait: yes
+      group_id: "{{ Vdbsg_id }}"
+      count: "{{ Vdb_count }}"
+      region: "{{ Vregion }}"
+      vpc_subnet_id: "{{ Vdbsn_id }}"
+      instance_tags: { "Name":"{{ Vvpc_name }}{{ Vdbname }}" }
+      state: absent
+    register: Rdb
+  - debug: var=Rdb

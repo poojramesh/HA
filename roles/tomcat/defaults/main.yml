@@ -1,0 +1,12 @@
+---
+# Tomcat system user
+tomcat_user: tomcatuser
+
+# JAVA_OPTS for Tomcat: memory
+tomcat_xmx: 512m
+
+# JAVA_OPTS for Tomcat: everything else
+tomcat_extra_opts: ""
+
+# Default tomcat port
+tomcat_port: "8080"

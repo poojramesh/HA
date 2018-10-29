@@ -1,0 +1,64 @@
+- name: Set ESB ec2 count in AZs
+  set_fact:
+    Vweb_counta: '{{ EI.TND.Vweb_count| int }}'
+
+- name: Create ESB EC2
+  ec2:
+    image: "{{ Vwebami }}"
+    instance_type: "{{ EI.TND.Vinstance_type }}"
+    instance_id: "{{ Vwebec2_ida }}"
+    key_name: "{{ Vkey_name }}"
+    wait: yes
+    group_id: "{{ Vwebsg_id }}"
+    count: '{{ item.0 | int}}'
+    region: "{{ Vregion }}"
+    vpc_subnet_id: "{{ item.1}}"
+    instance_tags: { "Name":"{{ Vvpc_name }}{{ Vwebname }}" }
+    state: absent
+  with_together:
+    - '{{ Vweb_counta }}'
+    - '{{ Vwebsn_ida }}'
+  register: Rweb
+- debug: var=Rweb
+  ignore_errors: true
+
+- name: Set AMQ ec2 count in AZs
+  set_fact:
+    Vapp_counta: '{{ EI.TND.Vapp_count | int }}'
+
+- name: Create AMQ EC2
+  ec2:
+    image: "{{ Vami }}"
+    instance_type: "{{ EI.TND.Vinstance_type }}"
+    instance_id: "{{ Vappec2_ida }}"
+    key_name: "{{ Vkey_name }}"
+    wait: yes
+    group_id: "{{ Vappsg_id }}"
+    count: '{{ item.0 | int}}'
+    region: "{{ Vregion }}"
+    vpc_subnet_id: "{{ item.1 }}"
+    assign_public_ip: "no"
+    instance_tags: { "Name":"{{ Vvpc_name }}{{ Vappname }}" }
+    state: absent
+  with_together:
+    - '{{ Vapp_counta }}'
+    - '{{ Vappsn_ida }}'
+  register: Rapp
+- debug: var=Rapp
+
+- name: Create DG EC2
+  ec2:
+    image: "{{ Vami }}"
+    instance_type: "{{ Vinstance_type }}"
+    instance_id: "{{ Vdbec2_id }}"
+    key_name: "{{ Vkey_name }}"
+    wait: yes
+    group_id: "{{ Vdbsg_id }}"
+    count: "{{ Vdb_count }}"
+    region: "{{ Vregion }}"
+    vpc_subnet_id: "{{ Vdbsn_id }}"
+    assign_public_ip: "no"
+    instance_tags: { "Name":"{{ Vvpc_name }}{{ Vdbname }}" }
+    state: absent
+  register: Rdb
+- debug: var=Rdb

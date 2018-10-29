@@ -1,0 +1,61 @@
+---
+- name: Fuse| Wait for the container-upgrade command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric container-upgrade'"
+- name: Fuse| upgrade the amq
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-upgrade 1.1 ej-amq-001'"
+- name: Fuse| Wait for amq to upgrade
+  pause: seconds=30
+- name: Fuse| upgrade the esb
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-upgrade 1.1 ej-esb-001'"
+- name: Fuse| Wait for esb to upgrade
+  pause: seconds=30  
+- name: Fuse| upgrade the gwy
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-upgrade 1.1 ej-gwy-001'"
+- name: Fuse| Wait for gwy to upgrade
+  pause: seconds=30  
+- name: Fuse| upgrade the fabric
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-upgrade 1.1 ej-fabric-001'"     
+- name: Fuse| Wait for fabric to upgrade
+  pause: seconds=30
+- name: Fuse| Wait for the Container stop command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric container-stop'"
+- name: Fuse| Stopping the gateway
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-stop --force ej-gwy-001'"
+- name: Fuse| Stopping the esb
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-stop --force ej-esb-001'"
+- name: Fuse| Stopping the amq
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-stop --force ej-amq-001'"
+- name: Fuse| Wait for Containers to stop
+  pause: seconds=60  
+- name: Fuse| Wait for the profile remove command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric container-remove-profile'"
+- name: Fuse| Remove base profiles from gateway
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-remove-profile ej-gwy-001 gateway-http gateway-mq'"
+- name: Fuse| Remove base profiles from esb
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-remove-profile ej-esb-001 jboss-fuse-minimal'"
+- name: Fuse| Remove base profiles from amq
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-remove-profile ej-amq-001 mq-amq'"
+   
+
+- name: Fuse| Wait for the profile add command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric container-add-profile'"
+- name: Fuse| Add ej profiles to  gateway
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-add-profile ej-gwy-001 ej-gateway-http ej-gateway-mq'"
+- name: Fuse| Add ej profiles to  amq
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-add-profile ej-amq-001 ej-amq'"   
+     
+     
+- name: Fuse| wait for start container command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric container-start'"
+- name: Fuse| Starting the amq
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-start --force ej-amq-001'"
+- name: Fuse| Wait for amq to start
+  pause: seconds=30
+- name: Fuse| Starting the esb
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-start --force ej-esb-001'"
+- name: Fuse| Wait for esb to start
+  pause: seconds=30  
+- name: Fuse| Starting the gwy
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-start --force ej-gwy-001'"
+- name: Fuse| Wait for gwy to start
+  pause: seconds=30  

@@ -1,0 +1,43 @@
+---
+- name: Maven| check if Maven is already installed
+  stat: path=/opt/apache-maven-3.2.3-bin.tar.gz
+  register: Maven_binary
+- block:
+  - name: Maven| Download Maven
+    get_url:
+      url: "{{MAVEN_REPO}}"
+      dest: "{{MAVEN_HOME}}"
+  - name: Maven| explode Maven tar
+    unarchive:
+      copy: no
+      src: "{{MAVEN_HOME}}{{MAVEN_SOURCE}}"
+      dest: "{{MAVEN_HOME}}"
+  - name: Maven| Change the setting.xml
+    copy:
+      force: yes
+      src: settings.xml
+      dest: "{{MAVEN_HOME}}{{MAVEN_VERSION}}/conf"  
+  - name: Fuse| check for profile.d file
+    stat: path=~/.bashrc
+    register: bashrc
+  - name: Fuse| add java home
+    lineinfile:
+      dest: ~/.bashrc
+      line: JAVA_HOME={{JAVA_HOME}}
+      state: present
+    when: bashrc.stat.exists  
+  - name: Fuse| add maven home
+    lineinfile:
+      dest: ~/.bashrc
+      line: M2_HOME={{MAVEN_HOME}}{{MAVEN_VERSION}}
+      state: present
+    when: bashrc.stat.exists  
+  - name: Fuse| update path
+    lineinfile:
+      dest: ~/.bashrc
+      line: "PATH=$PATH:{{MAVEN_HOME}}{{MAVEN_VERSION}}/bin"
+      state: present
+    when: bashrc.stat.exists  
+  - name: check the maven
+    shell: mvn -version
+  when: not Maven_binary.stat.exists       

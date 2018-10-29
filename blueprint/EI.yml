@@ -1,0 +1,14 @@
+---
+EI:
+  TND:
+    Vweb_count: 1
+    Vapp_count: 1
+    Vinstance_type: "t2.medium"
+  PPD:
+    Vweb_count: 2
+    Vapp_count: 2
+    Vinstance_type: "t2.large"
+  PRD:
+    Vweb_count: 4
+    Vapp_count: 2
+    Vinstance_type: "t2.medium"

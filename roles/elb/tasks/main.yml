@@ -1,0 +1,20 @@
+---
+#File roles/elb/tasks/main.yml
+
+
+
+ - name: Initiate test and development Load-balancer provisioning for "{{ Venvironment }}"
+   include: tnd.yml
+   static: no
+   when: Vstage is defined and Vstage == "TND"
+
+ - name: Initiate Pre-Production Load-balancer provisioning for "{{ Venvironment }}"
+   include: ppd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PPD"
+
+ - name: Initiate Production Load-balancer provisioning for "{{ Venvironment }}"
+   include: prd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PRD"
+

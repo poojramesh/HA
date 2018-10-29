@@ -1,0 +1,22 @@
+---
+- name: Fuse| Adding the bundle service
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'install -s mvn:org.jboss.quickstarts.fuse/cxf-soap/6.3.0.redhat-187'"
+  environment:
+    JAVA_HOME: /opt/jdk1.8.0_112
+- name: Fuse| Wait for 5 seconds
+  pause: seconds=5
+
+- name: copy karaf
+  template: src='karaf' dest='/opt/rh/jboss-fuse-6.3.0.redhat-187/bin/karaf'  
+
+- name: Fuse| Stop the fuse
+  shell: ./stop chdir='/opt/rh/jboss-fuse-6.3.0.redhat-187/bin'
+  environment:
+     JAVA_HOME: /opt/jdk1.8.0_112
+  async: 60
+
+- name: Fuse| Start the fuse
+  shell: ./start chdir='/opt/rh/jboss-fuse-6.3.0.redhat-187/bin'
+  environment:
+     JAVA_HOME: /opt/jdk1.8.0_112
+  async: 60

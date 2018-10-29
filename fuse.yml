@@ -1,0 +1,53 @@
+---
+- hosts: fuse
+  remote_user: svc.eiuser
+  tasks:
+   - name: Fuse| check if Fuse is already installed
+     stat: path=/opt/rh/jboss-fuse-6.2.1.redhat-107.zip
+     register: fuse_binary
+   - block:
+     - name: Fuse| download Fuse zip file
+       get_url:
+         url: http://art.europe.easyjet.local/artifactory/ext-release-local/org/jboss/fuse/jboss-fuse/6.2.1.redhat-107/jboss-fuse-6.2.1.redhat-107.zip
+         dest: /opt/rh/
+     - name: Fuse| explode Fuse zip
+       unarchive:
+         copy: no
+         src: /opt/rh/jboss-fuse-6.2.1.redhat-107.zip
+         dest: /opt/rh/
+     - name: Fuse| Basic configuration change updating the password
+       lineinfile:
+         dest: /opt/rh/jboss-fuse-6.2.1.redhat-107/etc/users.properties
+         regexp: ^#admin=admin
+         line: admin=admin,admin,manager,viewer,Monitor, Operator, Maintainer, Deployer, Auditor, Administrator, SuperUser
+         state: present   
+     - name: Fuse| Updating the encryption details
+       lineinfile:
+         dest: /opt/rh/jboss-fuse-6.2.1.redhat-107/etc/org.apache.karaf.jaas.cfg
+         regexp: ^encryption.enabled
+         line: encryption.enabled = true
+     - name: Fuse| updating the root name  
+       lineinfile:
+         dest: /opt/rh/jboss-fuse-6.2.1.redhat-107/etc/system.properties
+         regexp: ^karaf.name
+         line: karaf.name = easyjet-fcp-dev-fabric-001
+     - name: Fuse| Update the java JVM minimum memory
+       replace:
+         dest: /opt/rh/jboss-fuse-6.2.1.redhat-107/bin/setenv
+         regexp: ^JAVA_MIN_MEM=512M
+         replace: JAVA_MIN_MEM=1024M 
+     - name: Fuse| Update the java JVM maximin memory
+       replace:
+         dest: /opt/rh/jboss-fuse-6.2.1.redhat-107/bin/setenv
+         regexp: ^JAVA_MAX_MEM=512M
+         replace: JAVA_MAX_MEM=1024M
+     - name: Fuse| Starting the fuse
+       shell: ./start chdir=/opt/rh/jboss-fuse-6.2.1.redhat-107/bin
+       async: 60
+     
+     - name: Fuse |wait for fuse to start
+       wait_for: port=8181 host=localhost delay=10    
+     
+     when: not fuse_binary.stat.exists
+   - name: Checking to include
+     include: trial.yml 

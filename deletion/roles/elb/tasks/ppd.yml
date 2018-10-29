@@ -1,0 +1,5 @@
+---
+ - name: Create Loadbalance
+   ec2_elb_lb:
+      name: "{{ Vvpc_name }}ELB"
+      state: absent

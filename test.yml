@@ -1,0 +1,15 @@
+---
+# file: test.yml
+
+ - hosts: ej-esbserver
+   become: yes
+#   connection: local
+   gather_facts: true
+   vars:
+    Vevent: '{  "source": [ "aws.autoscaling" ], "detail-type": [ "EC2 Instance Launch Successful" ], "detail": { "AutoScalingGroupName": [ "EIPPD12ASG" ] } }'
+   pre_tasks:
+     - include_vars: blueprint/{{ Venvironment }}.yml
+#   become: yes
+   roles:
+    - common
+    - { role: java, Venvvar: '{{ Venvironment}}.{{ Vstage }}' }

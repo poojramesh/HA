@@ -1,0 +1,24 @@
+---
+#- name: Fuse| check if Fuse is already installed
+#  stat: path=/opt/rh/platform/
+#  register: platform_Git
+#- name: Fuse| Download the platform project
+#  command: git clone http://{{GIT_USER}}:{{GIT_PASS}}@code.europe.easyjet.local/EI/platform.git --branch {{GIT_BRANCH}} 
+#  args:
+#    chdir: /opt/rh
+#  when: not platform_Git.stat.exists
+- name: Fuse| get the git url
+  shell: export git_host=$(/opt/rh/jboss-fuse-6.3.0.redhat-187/bin/client -r 3 -d 10 -u admin -p admin 'fabric:cluster-list git') && export git_url=`echo $git_host | grep 'http://' | awk '{print $NF;}'` && echo -e $git_url
+  register: cluster_List
+- set_fact: git_Url={{ cluster_List.stdout | regex_replace('^(?P<protocol>https?\:\/\/)(?P<url>.*)$', '\\g<protocol>admin:admin@\\g<url>')}}
+#- name: Fuse| run the deploy command
+#  shell: "mvn clean install -Dfabric8.branch.oldBranchName=1.0 -Dfabric8.branch.branchName={{RELEASE_VERSION}} -Dfabric8.branch.gitUrl={{git_Url}}" 
+#  args:
+#    chdir: "/opt/projects/platform/{{PLATFORM_DIR}}"
+#  register: profile_upload  
+- name: Fuse| Wait for profile download and deployment
+  pause: seconds=30
+- debug:  msg="Deployed Successfully" 
+#- name: Fuse|profile upgrade and deploy
+#  include: profiledeploy.yml 
+#  when: "'BUILD SUCCESS' in profile_upload.stdout"  

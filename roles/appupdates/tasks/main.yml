@@ -1,0 +1,23 @@
+
+---
+  - name: assign inventory
+    template: src='hosts.yml' dest='/home/ec2-user/ejdemo/hosts.yml'
+
+
+#  - name: gather ec2 IP
+#    ec2_remote_facts:
+#      region: "{{ Vregion }}"
+#      filters:
+#        instance-id: "{{ item }}"
+#    with_items:
+#      - "{{ Vscaleup_ec2id }}"
+#    register: Rasgec2
+
+#  - debug:
+#      msg: "{{ Rasgec2 | json_query('results[].instances[].private_ip_address') }}"
+
+  - name: Set inventory for esb servers
+    lineinfile: dest='/home/ec2-user/ejdemo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-esbserver\]' line="{{ item }}" state=present
+    with_items:
+       - "{{ Vscaleup_ec2ip }}"
+#      - "{{ Rasgec2 | json_query('results[].instances[].private_ip_address') }}"

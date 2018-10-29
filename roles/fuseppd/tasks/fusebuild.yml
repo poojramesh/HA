@@ -1,0 +1,92 @@
+---
+- name: Fuse| Fabric check command
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-service --timeout 60000 --exception io.fabric8.api.BootstrapComplete'"  
+- name: Fuse| wait-for-command fabric create
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'wait-for-command fabric create'"
+- name: Fuse| Fabric create
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:create --force --clean --resolver localip --global-resolver localip --profile default --wait-for-provisioning'"
+  register: Fabric_Result
+- debug: var=Fabric_Result       
+- name: Fuse| changing the maven repository
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid io.fabric8.agent/org.ops4j.pax.url.mvn.repositories=\"file:${runtime.home}/${karaf.default.repository}@snapshots@id=karaf-default, file:${runtime.data}/maven/upload@snapshots@id=fabric-upload, http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/remote-repos@id=local.artifactory.remote\" default'"
+- name: Fuse| changing the patch repository
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid io.fabric8.agent/patch.repositories=\"http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/fusesource-release-remote@id=local.artifactory.fusesource.release.remote, http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/fusesource-ea-remote@id=local.artifactory.fusesource.ea.remote\" default'"
+- name: Fuse| changing the SSH log level
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid org.ops4j.pax.logging/log4j.logger.io.fabric8.service.ssh=DEBUG karaf'"
+- name: Fuse| changing the debug log level
+  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid org.ops4j.pax.logging/log4j.rootLogger=\"DEBUG, out, osgi:*\" karaf'"
+- name: Fuse| stopping the fuse
+  shell: ./stop chdir={{FUSE_HOME}}/bin
+- name: Fuse| stopping the fuse
+  pause: seconds=20
+- name: Fuse| starting the fuse
+  shell: ./start chdir={{FUSE_HOME}}/bin
+  async: 60
+- name: Fuse |wait for fuse to start
+  wait_for: port=8181 host=localhost delay=10
+- name: Fuse| started the fuse wait for 20 secs
+  pause: seconds=20    
+
+- name: change permission of {{ FUSE_HOME }}
+  file: 
+    path: /opt
+    state: directory
+    owner: ec2-user
+    mode: 0777
+
+- name: Fuse| creating the esb
+  command: "fabric:container-create-ssh --resolver localip --jvm-opts "-Xms384m -Xmx384m -Djava.rmi.server.hostname= {{ item }}" --host {{ item }} --path {{ HOST_RH_HOME }}/containers --user ec2-user --private-key "/home/ec2-user/nirmalan_keypair.pem" --profile default --proxy-uri http://{{ Vwebec2_ipa.0 }}:8181/maven/download ej-esb-00{{ item | index}}"
+  with_items:
+    - "{{ Vwebec2_ipa }}"
+    - "{{ Vwebec2_ipb }}"
+
+- name: Fuse| creating the gw
+  command: "fabric:container-create-ssh --resolver localip --jvm-opts "-Xms384m -Xmx384m -Djava.rmi.server.hostname= {{ item }}" --host {{ item }} --path {{ HOST_RH_HOME }}/containers --user ec2-user --private-key "/home/ec2-user/nirmalan_keypair.pem" --profile default --proxy-uri http://{{ Vwebec2_ipa.0 }}:8181/maven/download ej-gw-00{{ item | index}}"
+  with_items:
+    - "{{ Vwebec2_ipa }}"
+    - "{{ Vwebec2_ipb }}"
+
+- name: Fuse| creating the amq
+  command: "fabric:container-create-ssh --resolver localip --jvm-opts "-Xms384m -Xmx384m -Djava.rmi.server.hostname= {{ item }}" --host {{ item }} --path {{ HOST_RH_HOME }}/containers --user ec2-user --private-key "/home/ec2-user/nirmalan_keypair.pem" --profile default --proxy-uri http://{{ Vappec2_ipa.0 }}:8181/maven/download ej-amq-00{{ item | index}}"
+  with_items:
+    - "{{ Vappec2_ipa }}"
+    - "{{ Vappec2_ipb }}"
+
+
+
+
+
+
+# "{{ HOST_RH_HOME }}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-create-child --resolver localip --jvm-opts \"{{JVM_BROKER_OPTS}} -Djava.rmi.server.hostname={{HOST_IP}}\" --profile mq-amq {{ROOT_NODE_NAME}} ej-amq-001'"
+#
+ 
+#- name: Fuse| creating the amq
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-create-child --resolver localip --jvm-opts \"{{JVM_BROKER_OPTS}} -Djava.rmi.server.hostname={{HOST_IP}}\" --profile mq-amq {{ROOT_NODE_NAME}} ej-amq-001'"
+#- name: Fuse| created amq wait for 30 seconds
+#  pause: seconds=30  
+#- name: Fuse| creating the esb
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-create-child --resolver localip --jvm-opts \"{{JVM_APP_OPTS}} -Djava.rmi.server.hostname={{HOST_IP}}\" --profile jboss-fuse-minimal {{ROOT_NODE_NAME}} ej-esb-001'"
+#- name: Fuse| created esb wait for 60 seconds
+#  pause: seconds=60  
+#- name: Fuse| creating the gwy
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:container-create-child --resolver localip --jvm-opts \"{{JVM_GATEWAY_OPTS}} -Djava.rmi.server.hostname={{HOST_IP}}\" --profile gateway-http --profile gateway-mq {{ROOT_NODE_NAME}} ej-gwy-001'"
+#- name: Fuse| created esb wait for 30 seconds
+#  pause: seconds=30
+#
+#
+#- name: Fuse| changing the maven repository
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid io.fabric8.agent/org.ops4j.pax.url.mvn.repositories=\"file:${runtime.home}/${karaf.default.repository}@snapshots@id=karaf-default, file:${runtime.data}/maven/upload@snapshots@id=fabric-upload, http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/remote-repos@id=local.artifactory.remote, http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/libs-release-local@id=local.artifactory.releases, http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/libs-snapshot-local@snapshots@id=local.artifactory.snapshots\" default'"
+#- name: Fuse| changing the ssh log info
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid org.ops4j.pax.logging/log4j.logger.io.fabric8.service.ssh=INFO karaf'"
+#- name: Fuse| changing the log level
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:profile-edit --pid org.ops4j.pax.logging/log4j.rootLogger=\"INFO, out, osgi:*\" karaf'"
+#- name: Fuse| Invoking Jaas Manage
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'jaas:manage --index 1'"
+#- name: Fuse| Adding Jaas User
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'jaas:useradd amq amq'" 
+#- name: Fuse| update jaas
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'jaas:update'"  
+#- name: Fuse| Get Cluster list
+#  command: "{{FUSE_HOME}}/bin/client -r 3 -d 10 -u admin -p admin 'fabric:cluster-list git'" 		
+#- name: Fuse| Fuse profile download and deploy
+#  include: profiledownload.yml     

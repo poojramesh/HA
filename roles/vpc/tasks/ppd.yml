@@ -1,0 +1,392 @@
+---
+# File network/tasks/main.yml
+
+
+ #Adding variable for playing the application playbook at same time of infra provisional playbook
+    - name: Set variables for vpcname and cidr ranges
+      set_fact:
+         Vvpc_name: "{{ Venvironment }}{{ Vstage }}{{ Vnversion }}"
+         Vvpc_cidr: "{{ Vvpc_range | ipsubnet(20, Vnversion) }}" 
+         Vnversionold: '{{ Vnversion }}'
+         Vnversion: '{{ Vnversion + 01}}'
+
+    - name: Set variables for subnets and cidr ranges
+      set_fact:
+         Vsubnet_cidr_weba: "{{ Vvpc_cidr | ipsubnet(24, 5) }}"
+         Vsubnet_cidr_webb: "{{ Vvpc_cidr | ipsubnet(24, 6) }}"
+         Vsubnet_cidr_priAPPa: "{{ Vvpc_cidr | ipsubnet(24, 7) }}"
+         Vsubnet_cidr_priAPPb: "{{ Vvpc_cidr | ipsubnet(24, 8) }}"
+         Vsubnet_cidr_priDB: "{{ Vvpc_cidr | ipsubnet(24, 9) }}"
+         Vsubnet_cidr_nat: "{{ Vvpc_cidr | ipsubnet(24, 12) }}"
+         Vsubnet_cidr_puba: "{{ Vvpc_cidr | ipsubnet(24, 13) }}"
+         Vsubnet_cidr_pubb: "{{ Vvpc_cidr | ipsubnet(24, 14) }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vvpc_name line='Vvpc_name: \"{{ Vvpc_name }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vvpc_cidr line='Vvpc_cidr: \"{{ Vvpc_cidr }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_weba line='Vsubnet_cidr_weba: \"{{ Vsubnet_cidr_weba }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_webb line='Vsubnet_cidr_webb: \"{{ Vsubnet_cidr_webb }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_priAPPa line='Vsubnet_cidr_priAPPa: \"{{ Vsubnet_cidr_priAPPa }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_priAPPb line='Vsubnet_cidr_priAPPb: \"{{ Vsubnet_cidr_priAPPb }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_priDB line='Vsubnet_cidr_priDB: \"{{ Vsubnet_cidr_priDB }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_nat line='Vsubnet_cidr_nat: \"{{ Vsubnet_cidr_nat }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_puba line='Vsubnet_cidr_puba: \"{{ Vsubnet_cidr_puba }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vsubnet_cidr_pubb line='Vsubnet_cidr_pubb: \"{{ Vsubnet_cidr_pubb }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vnversion line='Vnversion: {{ Vnversion }}'"
+
+
+# Playbook to Create VPC
+    - name: Create VPC
+      ec2_vpc:
+         state: present
+         cidr_block: "{{ Vvpc_cidr }}"
+         resource_tags: { "Name":"{{ Vvpc_name }}" }
+         subnets:
+           - cidr: "{{ Vsubnet_cidr_weba }}"
+             az: "{{ Vregion }}a"
+             resource_tags: { "Name":"{{ Vvpc_name }}-{{ Vwebname }}a" }
+           - cidr: "{{ Vsubnet_cidr_webb }}"
+             az: "{{ Vregion }}b"
+             resource_tags: { "Name":"{{ Vvpc_name }}-{{ Vwebname }}b" }
+           - cidr: "{{ Vsubnet_cidr_priAPPa }}"
+             az: "{{ Vregion }}a"
+             resource_tags: { "Name":"{{ Vvpc_name }}-{{ Vappname }}a" }
+           - cidr: "{{ Vsubnet_cidr_priAPPb }}"
+             az: "{{ Vregion }}b"
+             resource_tags: { "Name":"{{ Vvpc_name }}-{{ Vappname }}b" }
+           - cidr: "{{ Vsubnet_cidr_priDB }}"
+             az: "{{ Vregion }}a"
+             resource_tags: { "Name":"{{ Vvpc_name }}-{{ Vdbname }}" }
+           - cidr: "{{ Vsubnet_cidr_nat }}"
+             az: "{{ Vregion }}a"
+             resource_tags: { "Name":"{{ Vvpc_name }}-nat" }
+           - cidr: "{{ Vsubnet_cidr_puba }}"
+             az: "{{ Vregion }}a"
+             resource_tags: { "Name":"{{ Vvpc_name }}-puba" }
+           - cidr: "{{ Vsubnet_cidr_pubb }}"
+             az: "{{ Vregion }}b"
+             resource_tags: { "Name":"{{ Vvpc_name }}-pubb" }
+         wait: yes
+         internet_gateway: True
+         route_tables:
+           - subnets:
+              - "{{ Vsubnet_cidr_nat }}"
+              - "{{ Vsubnet_cidr_puba }}"
+              - "{{ Vsubnet_cidr_pubb }}"
+             routes:
+              - dest: 0.0.0.0/0      
+                gw: igw
+             resource_tags: { "Name":"{{ Vvpc_name }}rtpub" }      
+         region: "{{ Vregion }}"
+         wait: yes
+      register: "Rvpc"
+
+    - name: Set vpc id variables
+      set_fact:
+         Vvpc_id: "{{ Rvpc.vpc.id }}"
+         
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vvpc_id line='Vvpc_id: \"{{ Rvpc.vpc.id }}\"'"
+    
+    - name: Gather ESB and GW Subnet Id
+      ec2_vpc_subnet_facts:
+         filters:
+           "tag:Name": "{{ Vvpc_name }}-{{ Vwebname }}*"
+         region: "{{ Vregion }}"
+      register: Rwebsn
+
+    - name: Set ESB and GW subnet id variables
+      set_fact:
+         Vwebsn_ida: "{{ Rwebsn.subnets.0.id }}"
+         Vwebsn_idb: "{{ Rwebsn.subnets.1.id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebsn_ida line='Vwebsn_ida: \"{{ Rwebsn.subnets.0.id }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebsn_idb line='Vwebsn_idb: \"{{ Rwebsn.subnets.1.id }}\"'"
+
+    - name: Gather AMQ Subnet Id
+      ec2_vpc_subnet_facts:
+         filters:
+           "tag:Name": "{{ Vvpc_name }}-{{ Vappname }}*"
+         region: "{{ Vregion }}"
+      register: Rappsn
+
+    - name: Set AMQ subnet id variables
+      set_fact:
+         Vappsn_ida: "{{ Rappsn.subnets.0.id }}"
+         Vappsn_idb: "{{ Rappsn.subnets.1.id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappsn_ida line='Vappsn_ida: \"{{ Rappsn.subnets.0.id }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappsn_idb line='Vappsn_idb: \"{{ Rappsn.subnets.1.id }}\"'"
+
+
+    - name: Gather DataGrid Subnet Id
+      ec2_vpc_subnet_facts:
+         filters:
+           "tag:Name": "{{ Vvpc_name }}-{{ Vdbname }}"
+         region: "{{ Vregion }}"
+      register: Rdbsn
+
+    - name: Set Datagrid subnet id variables
+      set_fact:
+         Vdbsn_id: "{{ Rdbsn.subnets.0.id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbsn_id line='Vdbsn_id: \"{{ Rdbsn.subnets.0.id }}\"'"
+
+
+    - name: Gather NAT Subnet Id
+      ec2_vpc_subnet_facts:
+         filters:
+           "tag:Name": "{{ Vvpc_name }}-nat"
+         region: "{{ Vregion }}"
+      register: Rnatsn
+
+    - name: Set NAT subnet id variables
+      set_fact:
+         Vnatsn_id: "{{ Rnatsn.subnets.0.id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vnatsn_id line='Vnatsn_id: \"{{ Rnatsn.subnets.0.id }}\"'"
+
+    - name: Gather Public Subnet Id
+      ec2_vpc_subnet_facts:
+         filters:
+           "tag:Name": "{{ Vvpc_name }}-pub*"
+         region: "{{ Vregion }}"
+      register: Rpubsn
+
+    - name: Set public subnet id variables
+      set_fact:
+         Vpubsn_ida: "{{ Rpubsn.subnets.0.id }}"
+         Vpubsn_idb: "{{ Rpubsn.subnets.1.id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vpubsn_ida line='Vpubsn_ida: \"{{ Rpubsn.subnets.0.id }}\"'"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vpubsn_idb line='Vpubsn_idb: \"{{ Rpubsn.subnets.1.id }}\"'"
+
+# Create VPC peering with Management VPC
+    - name: Create VPC peering
+      ec2_vpc_peer:
+        region: "{{ Vregion }}"
+        vpc_id: "{{ Vvpc_id }}"
+        peer_vpc_id: "{{ Vmgmt_vpc_id }}"
+        state: present
+        tags:
+          Name: "Peer-{{ Vvpc_name }}"
+      register: Rvpcpeer
+    - debug: var=Rvpcpeer
+
+    - name: Accept local VPC peering request
+      ec2_vpc_peer:
+        region: "{{ Vregion }}"
+        peering_id: "{{ Rvpcpeer.peering_id }}"
+        state: accept
+        tags:
+           Name: "Peer-{{ Vvpc_name }}"
+      register: Rvpcaccept
+
+    - name: Set VPC peer id variables
+      set_fact:
+         Vvpcpeer_id: "{{ Rvpcpeer.peering_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vvpcpeer_id line='Vvpcpeer_id: \"{{ Rvpcpeer.peering_id }}\"'"
+
+#Security Groups
+    - name: Security Group for ESB and GW Servers
+      ec2_group:
+        name: websg
+        description: web servers security group
+        vpc_id: "{{ Vvpc_id }}"
+        region: "{{ Vregion }}"
+        rules:
+         - proto: tcp
+           from_port: 22
+           to_port: 22
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 80
+           to_port: 80
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 443
+           to_port: 443
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 8009
+           to_port: 8009
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 8181
+           to_port: 8181
+           cidr_ip: 0.0.0.0/0
+      register: Rwebsg
+
+    - name: Set variable for ESB and GW security group id
+      set_fact:
+        Vwebsg_id: "{{ Rwebsg.group_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebsg_id line='Vwebsg_id: \"{{ Rwebsg.group_id }}\"'"
+
+
+    - name: Security Group for AMQ Servers
+      ec2_group:
+        name: appsg
+        description: app servers security group
+        vpc_id: "{{ Vvpc_id }}"
+        region: "{{ Vregion }}"
+        rules:
+         - proto: tcp
+           from_port: 22
+           to_port: 22
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 1433
+           to_port: 1433
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 8080
+           to_port: 8080
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 8009
+           to_port: 8009
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 8181
+           to_port: 8181
+           cidr_ip: 0.0.0.0/0
+      register: Rappsg
+
+    - name: Set variable for AMQ security group id
+      set_fact:
+        Vwebsg_id: "{{ Rappsg.group_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappsg_id line='Vappsg_id: \"{{ Rappsg.group_id }}\"'"
+
+
+
+    - name: Security Group for Datagrid Server
+      ec2_group:
+        name: dbsg
+        description: DB servers security group
+        vpc_id: "{{ Vvpc_id }}"
+        region: "{{ Vregion }}"
+        rules:
+         - proto: tcp
+           from_port: 22
+           to_port: 22
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 1433
+           to_port: 1433
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 10080
+           to_port: 10080
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 10090
+           to_port: 10090
+           cidr_ip: 0.0.0.0/0
+      register: Rdbsg
+
+    - name: Set variable for DataGrid security group id
+      set_fact:
+        Vdbsg_id: "{{ Rdbsg.group_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbsg_id line='Vdbsg_id: \"{{ Rdbsg.group_id }}\"'"
+
+
+
+    - name: Security Group for Internet facing instances
+      ec2_group:
+        name: pubsg
+        description: NAT and LB security group
+        vpc_id: "{{ Vvpc_id }}"
+        region: "{{ Vregion }}"
+        rules:
+         - proto: tcp
+           from_port: 22
+           to_port: 22
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 80
+           to_port: 80
+           cidr_ip: 0.0.0.0/0
+         - proto: tcp
+           from_port: 443
+           to_port: 443
+           cidr_ip: 0.0.0.0/0
+      register: Rpubsg
+
+    - name: Set variable for pub security group id
+      set_fact:
+        Vpubsg_id: "{{ Rpubsg.group_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vpubsg_id line='Vpubsg_id: \"{{ Rpubsg.group_id }}\"'"
+
+
+
+# Create NAT instance
+#    - name: Create NAT EC2 and Assign to NAT Subnet RT
+#      ec2:
+#         image: "{{ Vnat_ami }}"
+#         instance_type: "{{ Vinstance_type }}"
+#         key_name: "{{ Vkey_name }}"
+#         wait: yes
+#         group_id: "{{ Vwebsg_id }}"
+#         region: "{{ Vregion }}"
+#         vpc_subnet_id: "{{ Vnatsn_id }}"
+#         assign_public_ip: "yes"
+#         source_dest_check: false
+#         instance_tags: { "Name":"{{ Vvpc_name }}-NAT" }
+#         exact_count: 1
+#         count_tag: 
+#           Name: "{{ Vvpc_name }}-NAT"
+#      register: Rnat
+
+
+    - name: Create new nat gateway and allocate new EIP.
+      ec2_vpc_nat_gateway:
+        state: present
+        subnet_id: "{{ Vnatsn_id }}"
+        wait: yes
+        region: "{{ Vregion }}"
+      register: Rnatgw
+
+
+
+    - name: Set variable for NAT instance id
+      set_fact:
+        Vnatgw_id: "{{ Rnatgw.nat_gateway_id }}"
+    - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vnatgw_id line='Vnatgw_id: \"{{ Rnatgw.nat_gateway_id }}\"'"
+
+
+#    - lineinfile: dest='output.txt' regexp=\"{{ Rnat.instances.0.dns_name }}\" insertafter='NAT Public DNS' line=\"{{ Rnat.instances.0.dns_name }}\" state=present
+
+
+# Create Routing table for NAT enabled instance
+    - name: Set up NAT enabled route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ Vvpc_id }}"
+        region: "{{ Vregion }}"
+        tags: { "Name":"{{ Vvpc_name }}rtnat" }
+        subnets:
+          - "{{ Vdbsn_id }}"
+          - "{{ Vappsn_ida }}"
+          - "{{ Vappsn_idb }}"
+          - "{{ Vwebsn_ida }}"
+          - "{{ Vwebsn_idb }}" 
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ Vnatgw_id }}"
+          - dest: 40.0.0.0/16
+            vpc_peering_connection_id: "{{ Vvpcpeer_id }}"
+        state: present
+      register: Rnat_rt
+
+
+# Add peer route from Management VPC to the new VPC
+
+    - name: Add route to routing table
+      ec2_vpc_route_table:
+        vpc_id: "{{ Vmgmt_vpc_id }}"
+        region: "{{ Vregion }}"
+        lookup: id
+        route_table_id: "{{ Vmgmt_rt_id }}"
+        routes:
+         - dest: "{{ Vvpc_cidr }}"
+           vpc_peering_connection_id: "{{ Vvpcpeer_id }}"
+         - dest: 0.0.0.0/0
+           gateway_id: igw
+         - dest: 70.0.0.0/16
+           vpc_peering_connection_id: pcx-c7d3d7ae
+        state: present
+      register: Raddroute
+    - debug: var=Raddroute
+
+...

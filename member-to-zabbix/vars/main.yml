@@ -1,0 +1,8 @@
+--- 
+SERVER_URL: "http://fcp-ops-n01.fcp.easyjet.local/zabbix/"
+LOGIN_USER: "svc.zabbixadsync"
+LOGIN_PASSWORD: "{{svc_zabbixadsync_password}}"
+#HOST_NAME: [D2ACCI09HCSR01,D2ACCI09HCSR02]
+#HOST_GROUPS: "FCP AD CI06"
+#link_templates: "Template OS Linux"
+IP: "127.0.0.1"

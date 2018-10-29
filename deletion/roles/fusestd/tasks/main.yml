@@ -1,0 +1,66 @@
+---
+
+- name: Fuse| check if Fuse is already installed
+  stat: path={{HOST_RH_HOME}}/
+  register: rh_Dir
+- name: Fuse | create rh directory if doesn't exist
+  file: path={{HOST_RH_HOME}} state=directory mode=0755
+  when: not rh_Dir.stat.exists
+- name: Fuse| check if Fuse is already installed
+  stat: path={{HOST_RH_HOME}}/jboss-fuse-karaf-6.3.0.redhat-187.zip
+  register: fuse_binary
+- block:
+  - name: Fuse| download Fuse zip file
+    get_url:
+      url: "{{fUSE_REPO}}"
+      dest: "{{HOST_RH_HOME}}/"
+  - name: Fuse| explode Fuse zip
+    unarchive:
+      copy: no
+      src: "{{HOST_RH_HOME}}/{{FUSE_ARCHIEVE}}"
+      dest: "{{HOST_RH_HOME}}"
+  - name: Fuse| Basic configuration change updating the password
+    lineinfile:
+      dest: "{{FUSE_HOME}}/etc/users.properties"
+      regexp: ^#admin=admin
+      line: admin=admin,admin,manager,viewer,Monitor, Operator, Maintainer, Deployer, Auditor, Administrator, SuperUser
+      state: present   
+  - name: Fuse| Updating the encryption details
+    lineinfile:
+      dest: "{{FUSE_HOME}}/etc/org.apache.karaf.jaas.cfg"
+      regexp: ^encryption.enabled
+      line: encryption.enabled = true
+  - name: Fuse| updating the root name  
+    lineinfile:
+      dest: "{{FUSE_HOME}}/etc/system.properties"
+      regexp: ^karaf.name
+      line: karaf.name = {{ROOT_NODE_NAME}}
+  - name: Fuse| Update the java JVM minimum memory
+    replace:
+      dest: "{{FUSE_HOME}}/bin/setenv"
+      regexp: ^JAVA_MIN_MEM=512M
+      replace: JAVA_MIN_MEM=256M 
+  - name: Fuse| Update the java JVM maximin memory
+    replace:
+      dest: "{{FUSE_HOME}}/bin/setenv"
+      regexp: ^JAVA_MAX_MEM=1024M
+      replace: JAVA_MAX_MEM=600M
+  - name: Fuse| Update the java JVM minimum perm memory
+    replace:
+      dest: "{{FUSE_HOME}}/bin/setenv"
+      regexp: ^JAVA_PERM_MEM=128M
+      replace: JAVA_PERM_MEM=128M
+  - name: Fuse| Update the java JVM maximin perm memory
+    replace:
+      dest: "{{FUSE_HOME}}/bin/setenv"
+      regexp: ^JAVA_MAX_PERM_MEM=256M
+      replace: JAVA_MAX_PERM_MEM=256M
+  - name: Fuse| Starting the fuse
+    shell: ./start chdir={{FUSE_HOME}}/bin
+    environment:
+       JAVA_HOME: /opt/jdk1.8.0_112  
+    async: 60
+     
+  - name: Fuse |wait for fuse to start
+    wait_for: port=8181 host=localhost delay=10
+#  when: not fuse_binary.stat.exists     

@@ -1,0 +1,8 @@
+---
+
+#JAVA installation variables	
+JAVA_REPO: "http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/jdk-8u112-linux-x64.tar.gz"   
+JAVA_SOURCE: jdk-8u112-linux-x64.tar.gz
+JAVA_HOME: /opt/
+JAVA_VERSION: jdk1.8.0_112
+

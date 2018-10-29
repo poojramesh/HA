@@ -1,0 +1,11 @@
+---
+# file: autoscaling.yml
+
+ - hosts: localhost
+   connection: local
+   gather_facts: true
+   pre_tasks:
+     - include_vars: blueprint/{{ Venvironment }}.yml
+   roles:
+    - common
+    - { role: asg, Vblueprint: "{{ Venvironment }}.{{ Vstage }}" }

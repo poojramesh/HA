@@ -1,0 +1,8 @@
+---
+# file: network.yml
+ - hosts: localhost
+   connection: local
+   gather_facts: false
+   roles:
+    - common
+    - del_vpc

@@ -1,0 +1,76 @@
+---
+ - name: Set the ec2 count in AZs
+   set_fact:
+      Vweb_counta: '{{ (Vweb_count / 2 ) | round | int }}'
+      Vweb_countb: '{{ Vweb_count - (( Vweb_count  / 2 )| round | int) }}'
+
+ - name: Create Web EC2
+   ec2:
+     image: "{{ Vwebami }}"
+     instance_type: "{{ Vinstance_type }}"
+     key_name: "{{ Vkey_name }}"
+     wait: yes
+     group_id: "{{ Vwebsg_id }}"
+     count: '{{ item.0 | int}}'
+     region: "{{ Vregion }}"
+     vpc_subnet_id: "{{ item.1}}"
+     assign_public_ip: "no"
+     instance_tags: { "Name":"{{ Vvpc_name }}WEB" }
+     state: present
+   with_together:
+     - [ '{{ Vweb_counta }}', '{{ Vweb_countb }}' ]
+     - [ '{{ Vwebsn_ida }}', '{{ Vwebsn_idb }}' ]
+   register: Rweb
+ - debug: var=Rweb
+
+ - name: Set variables for web instance id and private ip
+   set_fact:
+     Vwebec2_ida: "{{ Rweb |json_query('results[0].instance_ids') }}"
+     Vwebec2_idb: "{{ Rweb |json_query('results[1].instance_ids') }}"
+     Vwebec2_ipa: "{{ Rweb |json_query('results[0].instances[].private_ip') }}"
+     Vwebec2_ipb: "{{ Rweb |json_query('results[1].instances[].private_ip') }}"
+ - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ida line='Vwebec2_ida: \"{{ Rweb |json_query('results[0].instance_ids') }}\"'"
+ - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_idb line='Vwebec2_idb: \"{{ Rweb |json_query('results[1].instance_ids') }}\"'"
+ - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ipa line='Vwebec2_ipa: \"{{ Rweb |json_query('results[0].instances[].private_ip') }}\"'"
+ - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vwebec2_ipb line='Vwebec2_ipb: \"{{ Rweb |json_query('results[1].instances[].private_ip') }}\"'"
+
+
+ - name: Create Loadbalance
+   ec2_elb_lb:
+      name: "{{ Vvpc_name }}ELB"
+      state: present
+      connection_draining_timeout: 60
+      idle_timeout: 300
+      security_group_ids: "{{ Vwebsg_id }}"
+      cross_az_load_balancing: "yes"
+      region: "{{ Vregion }}"
+      subnets:
+       - "{{ Vwebsn_ida }}"
+       - "{{ Vwebsn_idb }}"
+      tags:
+        Name: "{{ Vvpc_name }}web"
+      listeners:
+       - protocol: http
+         load_balancer_port: 80
+         instance_port: 80
+      health_check:
+         ping_protocol: http # options are http, https, ssl, tcp
+         ping_port: 80
+         ping_path: "/index.html" # not required for tcp or ssl
+         response_timeout: 15 # seconds
+         interval: 60 # seconds
+         unhealthy_threshold: 3
+         healthy_threshold: 5
+   register: Relb
+
+ - name: Register instances with ELB
+   ec2_elb:
+     instance_id: "{{ item }}"
+     ec2_elbs: "{{ Vvpc_name }}ELB"
+     state: present
+     region: "{{ Vregion }}"
+   with_items: 
+    - "{{ Vwebec2_ida }}"
+    - "{{ Vwebec2_idb }}"
+   register: RwebinELB
+

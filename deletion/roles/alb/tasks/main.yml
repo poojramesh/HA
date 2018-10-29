@@ -1,0 +1,52 @@
+---
+
+- name: create an application load balancer
+  elb_application_lb:
+    name: testalb #some vpc name like vpc-e5b9e283
+    scheme: internal # can be internal or internetfacing
+    state: present
+    zones:
+      - us-west-2a #some region like us-east-1d
+      - us-west-2b #some region like us-east-1c
+    security_groups:
+      - sg-a64fbcde #securtiy gruop id like sg-16e95266
+    subnets:
+      - subnet-37ed2050 subnet id like subnet-354b3550
+    listeners:
+      - protocol: http 
+        load_balancer_port: 80
+        instance_port: 80
+        proxy_protocol: True
+#      - protocol: https
+#        load_balancer_port: 443
+#        instance_protocol: http 
+#        instance_port: 80
+        
+#  ssl_certificate_id: # like "arn:aws:iam::123456789012:server-certificate/company/servercerts/ProdServerCert"
+      
+    health_check:
+        ping_protocol: http 
+        ping_port: 80
+        ping_path: "/index.html"                
+        response_timeout: 5 
+        interval: 30 
+        unhealthy_threshold: 2
+        healthy_threshold: 10
+
+- name: to create a target group
+  ec2_alb_target_groups:
+     region: us-west-2
+     names:
+       - testtg
+     lb_names:
+       - testalb
+
+
+#- name: to register targets
+#  ec2_alb_targets :
+#     region: us-west-2
+#     state: present
+#  arns:
+#    - xxx
+#  targets:
+#    - <target 1 like Id=string>

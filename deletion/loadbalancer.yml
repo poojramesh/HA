@@ -1,0 +1,17 @@
+---
+# file: compute.yml
+
+  - hosts: localhost
+    connection: local
+    gather_facts: true
+    vars_prompt:
+      - name: Venvironment
+        prompt: "Please Select the environment"
+        private: no
+      - name: Vstage
+        prompt: "Please select the stage (Dev/PreProd/Prod)"
+        private: no
+
+    roles:
+      - common
+      - elb

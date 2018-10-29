@@ -1,0 +1,82 @@
+---
+#File: roles/ec2/tasks/main.yml
+
+     - name: Set ESB ec2 count in AZs
+       set_fact:
+         Vweb_counta: '{{ (EI.PRD.Vweb_count / 2 ) | round | int }}'
+         Vweb_countb: '{{ EI.PRD.Vweb_count - (( EI.PRD.Vweb_count  / 2 )| round | int) }}'
+
+     - name: Create ESB EC2
+       ec2:
+         image: "{{ Vwebami }}"
+         instance_type: "{{ Vinstance_type }}"
+         instance_ida: "{{ Vwebec2_ida }}"
+         instance_idb: "{{ Vwebec2_idb }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vwebsg_id }}"
+         count: '{{ item.0 | int}}'
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ item.1}}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vwebname }}" }
+         state: absent
+       with_together:
+         - [ '{{ Vweb_counta }}', '{{ Vweb_countb }}' ]
+         - [ '{{ Vwebsn_ida }}', '{{ Vwebsn_idb }}' ]
+       register: Rweb
+     - debug: var=Rweb
+
+
+     - name: Set AMQ ec2 count in AZs
+       set_fact:
+         Vapp_counta: '{{ (EI.PRD.Vapp_count / 2 ) | round | int }}'
+         Vapp_countb: '{{ EI.PRD.Vapp_count - (( EI.PRD.Vapp_count  / 2 )| round | int) }}'
+
+     - name: Delete AMQ EC2
+       ec2:
+         image: "{{ Vami }}"
+         instance_type: "{{ Vinstance_type }}"
+         instance_ida: "{{ Vappec2_ida }}"
+         instance_idb: "{{ Vappec2_idb }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vappsg_id }}"
+         count: '{{ item.0 | int}}'
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ item.1 }}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vappname }}" }
+         state: absent
+       with_together:
+         - [ '{{ Vapp_counta }}', '{{ Vapp_countb }}' ]
+         - [ '{{ Vappsn_ida }}', '{{ Vappsn_idb }}' ]
+       register: Rapp
+     - debug: var=Rapp
+
+
+     - name: Set AMQ inventory
+       lineinfile: dest='/home/ec2-user/hademo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-amqserver\]' line="{{ item }}" state=present
+       with_items:
+           - "{{ Vappec2_ipa }}"
+           - "{{ Vappec2_ipb }}"
+
+
+
+     - name: Create DG EC2
+       ec2:
+         image: "{{ Vami }}"
+         instance_type: "{{ Vinstance_type }}"
+         instance_id: "{{ Vdbec2_id }}"
+         key_name: "{{ Vkey_name }}"
+         wait: yes
+         group_id: "{{ Vdbsg_id }}"
+         count: "{{ Vdb_count }}"
+         region: "{{ Vregion }}"
+         vpc_subnet_id: "{{ Vdbsn_id }}"
+         assign_public_ip: "no"
+         instance_tags: { "Name":"{{ Vvpc_name }}{{ Vdbname }}" }
+         state: absent
+       register: Rdb
+     - debug: var=Rdb
+

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <username>team.city.build</username>
+	  <password>Password1</password>
+      <id>central</id>
+    </server>
+    <server>
+      <username>team.city.build</username>
+	  <password>Password1</password>
+      <id>snapshots</id>
+    </server>
+	<server>
+      <username>team.city.build</username>
+	  <password>Password1</password>
+      <id>remote-repos</id>
+    </server>
+	<server>
+  <id>fabric8.upload.repo</id>
+  <username>admin</username>
+  <password>admin</password>
+</server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <mirrorOf>!central,*</mirrorOf>
+      <name>remote-repos</name>
+      <url>http://art.europe.easyjet.local/artifactory/remote-repos</url>
+      <id>remote-repos</id>
+    </mirror>
+  </mirrors>
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>libs-release</name>
+          <url>http://art.europe.easyjet.local/artifactory/libs-release</url>
+        </repository>
+        <repository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>libs-snapshot</name>
+          <url>http://art.europe.easyjet.local/artifactory/libs-snapshot</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>plugins-release</name>
+          <url>http://art.europe.easyjet.local/artifactory/plugins-release</url>
+        </pluginRepository>
+        <pluginRepository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>plugins-snapshot</name>
+          <url>http://art.europe.easyjet.local/artifactory/plugins-snapshot</url>
+        </pluginRepository>
+      </pluginRepositories>
+      <id>artifactory</id>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>artifactory</activeProfile>
+  </activeProfiles>
+  <pluginGroups>
+        <pluginGroup>fr.jcgay.maven.plugins</pluginGroup>
+  </pluginGroups>
+</settings>

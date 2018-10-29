@@ -1,0 +1,9 @@
+---
+
+#Maven installation variables	
+MAVEN_REPO: "http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/apache-maven-3.2.3-bin.tar"   
+#MAVEN_REPO: https://archive.apache.org/dist/maven/maven-3/3.2.3/binaries/apache-maven-3.2.3-bin.tar.gz
+MAVEN_SOURCE: apache-maven-3.2.3-bin.tar
+MAVEN_HOME: /opt/
+MAVEN_VERSION: apache-maven-3.2.3
+JAVA_HOME: /opt/jdk1.8.0_05

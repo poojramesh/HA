@@ -1,0 +1,228 @@
+---
+# File: roles/asg/tasks/main.yml
+  - name: Create Loadbalance
+    ec2_elb_lb:
+      name: "{{ Vvpc_name }}ELB"
+      state: present
+      connection_draining_timeout: 60
+      idle_timeout: 300
+      security_group_ids: "{{ Vwebsg_id }}"
+      cross_az_load_balancing: "yes"
+      region: "{{ Vregion }}"
+      subnets:
+       - "{{ Vpubsn_ida }}"
+       - "{{ Vpubsn_idb }}"
+      tags: 
+        Name: "{{ Vvpc_name }}web"
+      listeners:
+       - protocol: http
+         load_balancer_port: 80
+         instance_port: 8181
+      health_check:
+         ping_protocol: http # options are http, https, ssl, tcp
+         ping_port: 80
+         ping_path: "/index.html" # not required for tcp or ssl
+         response_timeout: 15 # seconds
+         interval: 60 # seconds
+         unhealthy_threshold: 3
+         healthy_threshold: 5
+
+  - name: Create Launch Configuration
+    ec2_lc:
+      name: "{{ Vvpc_name }}LC"
+      image_id: "{{ Vwebami }}"
+      key_name: "{{ Vkey_name }}"
+      security_groups: "{{ Vwebsg_id }}"
+      instance_type: "{{ Vinstance_type }}"
+      region: "{{ Vregion }}"
+      assign_public_ip: yes
+      state: present    
+
+  - name: Create Autoscaling group
+    ec2_asg:
+      name: "{{ Vvpc_name }}ASG"
+      launch_config_name: "{{ Vvpc_name }}LC"
+      load_balancers: "{{ Vvpc_name }}ELB"
+      health_check_period: 60
+      health_check_type: ELB
+      min_size: 2
+      max_size: 5
+      desired_capacity: '{{ EI.TND.Vweb_count }}'
+      vpc_zone_identifier: [ '{{ Vwebsn_ida }}', '{{ Vwebsn_idb }}' ]
+      region: "{{ Vregion }}"
+      tags:
+       - Name: "{{ Vvpc_name }}ESB"
+         propagate_at_launch: yes
+      state: present
+    register: Rasg
+
+
+
+  - name: Configure Scaling Policies
+    ec2_scaling_policy:
+      region: "{{ Vregion }}"
+      name: "{{ item.name }}"
+      asg_name: "{{ Vvpc_name }}ASG"
+      state: present
+      adjustment_type: "{{ item.adjustment_type }}"
+      min_adjustment_step: "{{ item.min_adjustment_step }}"
+      scaling_adjustment: "{{ item.scaling_adjustment }}"
+      cooldown: "{{ item.cooldown }}"
+    with_items:
+     - name: "Increase Group Size"
+       adjustment_type: "ChangeInCapacity"
+       scaling_adjustment: +1
+       min_adjustment_step: 1
+       cooldown: 180
+     - name: "Decrease Group Size"
+       adjustment_type: "ChangeInCapacity"
+       scaling_adjustment: -1
+       min_adjustment_step: 1
+       cooldown: 300
+    register: Rsp
+
+  - name: Determine Metric Alarm configuration
+    set_fact:
+      metric_alarms:
+       - name: "ScaleUp"
+         comparison: ">="
+         threshold: 70.0
+         alarm_actions:
+          - "{{ Rsp.results[0].arn }}"
+       - name: "ScaleDown"
+         comparison: "<"
+         threshold: 0.0
+         alarm_actions:
+          - "{{ Rsp.results[1].arn }}"
+
+  - name: Configure Metric Alarms and link to Scaling Policies
+    ec2_metric_alarm:
+      region: "{{ Vregion }}"
+      name: "{{ item.name }}"
+      state: present
+      metric: "CPUUtilization"
+      namespace: "AWS/EC2"
+      statistic: "Average"
+      comparison: "{{ item.comparison }}"
+      threshold: "{{ item.threshold }}"
+      period: 60
+      evaluation_periods: 5
+      unit: "Percent"
+      dimensions:
+        AutoScalingGroupName: "{{ Vvpc_name }}ASG"
+      alarm_actions: "{{ item.alarm_actions }}"
+    with_items:
+       - "{{ metric_alarms }}"
+    register: Rma
+
+# gather ec2 fleets in inventpry file
+
+
+  - name: Add Autoscaling instnaces to inventory
+    ec2_asg_facts:
+      name: "{{ Vvpc_name }}ASG"
+    register: Rasg
+  - debug:
+      msg: "{{ Rasg | json_query('results[].instances[].instance_id') }}"
+
+  - name: gather ec2 IP
+    ec2_remote_facts:
+      region: "{{ Vregion }}"
+      filters:
+        instance-id: "{{ item }}"
+    with_items:
+      - "{{ Rasg | json_query('results[].instances[].instance_id') }}"
+    register: Rasgec2
+
+  - debug:
+      msg: "{{ Rasgec2 | json_query('results[].instances[].private_ip_address') }}"
+
+  - name: Set inventory for esb servers
+    lineinfile: dest='/home/ec2-user/ejdemo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-esbserver\]' line="{{ item }}" state=present
+    with_items:
+      - "{{ Rasgec2 | json_query('results[].instances[].private_ip_address') }}"
+
+#Provision AMQ and DG servers
+
+  - name: Set AMQ ec2 count in AZs
+    set_fact:
+      Vapp_counta: '{{ (EI.TND.Vapp_count / 2 ) | round | int }}'
+      Vapp_countb: '{{ EI.TND.Vapp_count - (( EI.TND.Vapp_count  / 2 )| round | int) }}'
+
+  - name: Create AMQ EC2
+    ec2:
+      image: "{{ Vami }}"
+      instance_type: "{{ EI.TND.Vinstance_type }}"
+      key_name: "{{ Vkey_name }}"
+      wait: yes
+      group_id: "{{ Vappsg_id }}"
+      count: '{{ item.0 | int}}'
+      region: "{{ Vregion }}"
+      vpc_subnet_id: "{{ item.1 }}"
+      assign_public_ip: "no"
+      instance_tags: { "Name":"{{ Vvpc_name }}{{ Vappname }}" }
+      state: present
+    with_together:
+      - [ '{{ Vapp_counta }}', '{{ Vapp_countb }}' ]
+      - [ '{{ Vappsn_ida }}', '{{ Vappsn_idb }}' ]
+    register: Rapp
+  - debug: var=Rapp
+
+  - name: Set variables for app instance id and private ip
+    set_fact:
+      Vappec2_ida: "{{ Rapp |json_query('results[0].instance_ids') }}"
+      Vappec2_idb: "{{ Rapp |json_query('results[1].instance_ids') }}"
+      Vappec2_ipa: "{{ Rapp |json_query('results[0].instances[].private_ip') }}"
+      Vappec2_ipb: "{{ Rapp |json_query('results[1].instances[].private_ip') }}"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ida line='Vappec2_ida: \"{{ Rapp |json_query('results[0].instance_ids') }}\"'"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_idb line='Vappec2_idb: \"{{ Rapp |json_query('results[1].instance_ids') }}\"'"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ipa line='Vappec2_ipa: \"{{ Rapp |json_query('results[0].instances[].private_ip') }}\"'"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vappec2_ipb line='Vappec2_ipb: \"{{ Rapp |json_query('results[1].instances[].private_ip') }}\"'"
+
+
+  - name: Set AMQ inventory
+    lineinfile: dest='/home/ec2-user/ejdemo/hosts.yml' regexp="{{ item }}" insertafter='\[ej-amqserver\]' line="{{ item }}" state=present
+    with_items:
+        - "{{ Vappec2_ipa }}"
+        - "{{ Vappec2_ipb }}"
+
+  - name: Create DG EC2
+    ec2:
+      image: "{{ Vdgami }}"
+      instance_type: "{{ Vinstance_type }}"
+      key_name: "{{ Vkey_name }}"
+      wait: yes
+      group_id: "{{ Vdbsg_id }}"
+      count: "{{ Vdb_count }}"
+      region: "{{ Vregion }}"
+      vpc_subnet_id: "{{ Vdbsn_id }}"
+      assign_public_ip: "no"
+      instance_tags: { "Name":"{{ Vvpc_name }}{{ Vdbname }}" }
+      state: present
+    register: Rdb
+  - debug: var=Rdb
+
+
+  - name: Set variables for db instance id and private ip
+    set_fact:
+      Vdbec2_id: "{{ Rdb.instance_ids }}"
+      Vdbec2_ip: "{{ Rdb.instances.0.private_ip }}"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbec2_id line='Vdbec2_id: \"{{ Rdb.instance_ids }}\"'"
+  - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vdbec2_ip line='Vdbec2_ip: \"{{ Rdb.instances.0.private_ip }}\"'"
+  - lineinfile: dest='/home/ec2-user/ejdemo/hosts.yml' regexp=\"{{ Rdb.instances.0.private_ip }}\" insertafter='\[ej-dgserver\]' line=\"{{ Rdb.instances.0.private_ip }}\" state=present
+
+
+# Currently ASG Name need to enter manually
+
+  - name: Add Autoscaling group to cloud watch
+    cloudwatchevent_rule:
+      name: "scaleoutnotification"
+      description: "scale out notification"
+      event_pattern: "{ \"source\": [ \"aws.autoscaling\" ], \"detail-type\": [ \"EC2 Instance Launch Successful\" ], \"detail\": { \"AutoScalingGroupName\": [ \"EIPPD18ASG\" ] } }"
+      targets:
+       - id: "asgscaleupsns"
+         arn: "arn:aws:sns:us-west-2:738348291113:asgscaleupsns"
+
+
+
+...

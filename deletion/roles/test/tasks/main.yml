@@ -1,0 +1,10 @@
+---
+
+ - name: Add Autoscaling group to cloud watch
+   cloudwatchevent_rule:
+     name: "scaleoutnotification"
+     description: "scale out notification"
+     event_pattern: "{ \"source\": [ \"aws.autoscaling\" ], \"detail-type\": [ \"EC2 Instance Launch Successful\" ], \"detail\": { \"AutoScalingGroupName\": [ \"EIPPD16ASG\" ] } }"
+     targets:
+      - id: "asgscaleupsns"
+        arn: "arn:aws:sns:us-west-2:738348291113:asgscaleupsns"

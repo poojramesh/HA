@@ -1,0 +1,34 @@
+---
+- name: Add route to routing table
+  ec2_vpc_route_table:
+    vpc_id: "{{ Vmgmt_vpc_id }}"
+    region: "{{ Vregion }}"
+    lookup: id
+    route_table_id: "{{ Vmgmt_rt_id }}"
+    routes:
+      - dest: "{{ Vvpc_cidr }}"
+        vpc_peering_connection_id: "{{ Vvpcpeer_id }}"
+      - dest: 0.0.0.0/0
+        gateway_id: igw
+      - dest: 70.0.0.0/16
+        vpc_peering_connection_id: pcx-c7d3d7ae
+    state: absent
+
+- name: Set vpc id variables
+  set_fact:
+    vpc_peering_connection_id: "{{ Vvpcpeer_id }}"
+
+- name: Get all vpc peers with specific filters
+  ec2_vpc_peering_facts:
+    region: "{{ Vregion }}"
+    filters:
+      "tag:Name": Peer-{{ Vvpc_name }}
+  register: vpc_peers
+
+- name: delete a  VPC peering Connection
+  ec2_vpc_peer:
+    region: "{{ Vregion }}"
+    peering_id: "{{ vpc_peers.result.vpc_peering_connection_id }}"
+    state: absent
+  register: vpc_peers
+- debug: var=vpc_peers

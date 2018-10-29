@@ -1,0 +1,16 @@
+---
+#Fuse Dev installation variables
+fUSE_REPO: http://user:EioznPJxhC6Y@50.0.10.13/artifactory/ejdemo/jboss-fuse-karaf-6.3.0.redhat-187.zip
+FUSE_ARCHIEVE: jboss-fuse-karaf-6.3.0.redhat-187.zip
+HOST_RH_HOME: /opt/rh
+FUSE_HOME: /opt/rh/jboss-fuse-6.3.0.redhat-187
+JVM_FABRIC_OPTS: -Xms256m -Xmx256m
+JVM_BROKER_OPTS: -Xms128m -Xmx128m
+JVM_APP_OPTS: -Xms384m -Xmx384m
+JVM_GATEWAY_OPTS: -Xms128m -Xmx128m
+ROOT_NODE_NAME: ej-demo-fabric-001
+RELEASE_VERSION: 1.1
+PLATFORM_DIR: deployment/pde/dev/
+HOST_IP: 50.0.10.227  #50.0.10.233
+
+JAVA_HOME: /usr/lib/jvm/java-1.8.0-openjdk

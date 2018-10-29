@@ -1,0 +1,24 @@
+---
+#File roles/vpc/tasks/main.yml
+
+ - name: Set variable for Environments
+   lineinfile: "dest=roles/common/defaults/main.yml regexp=^Venvironment line='Venvironment: \"{{ Venvironment }}\"'"
+ - lineinfile: "dest=roles/common/defaults/main.yml regexp=^Vstage line='Vstage: \"{{ Vstage }}\"'"
+
+
+
+ - name: Initiate test and development network environment provisioning for "{{ Venvironment }}"
+   include: tnd.yml
+   static: no
+   when: Vstage is defined and Vstage == "TND"
+
+ - name: Initiate Pre-Production network environment provisioning for "{{ Venvironment }}"
+   include: ppd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PPD"
+
+ - name: Initiate Production network environment provisioning for "{{ Venvironment }}"
+   include: prd.yml
+   static: no
+   when: Vstage is defined and Vstage == "PRD"
+

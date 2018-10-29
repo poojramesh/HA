@@ -1,0 +1,53 @@
+---
+   - name: Create host groups
+     zabbix_group:
+       server_url: "{{ SERVER_URL }}"
+       login_user: "{{ LOGIN_USER }}"
+       login_password: "{{ LOGIN_PASSWORD }}"       
+       state: present
+       host_groups:
+         - "{{ HOST_GROUPS }}"     
+
+   - name: add linux host
+     zabbix_host:   
+       server_url: "{{ SERVER_URL }}"
+       login_user: "{{ LOGIN_USER }}"
+       login_password: "{{ LOGIN_PASSWORD }}"       
+       host_name: "{{ hostnames[item] }}"
+       host_groups:
+         - "{{ HOST_GROUPS }}"
+       link_templates:
+         - Template OS Linux
+       status: enabled
+       state: present
+       interfaces:
+         - type: 1
+           main: 1
+           useip: 0
+           ip: "{{IP}}"
+           dns: "{{ hostnames[item] }}.fcp.easyjet.local"
+           port: 10050
+     with_items: #
+       - "{{groups['OS_LINUX'] | default([]) }}"
+
+   - name: add windows host
+     zabbix_host:   
+       server_url: "{{ SERVER_URL }}"
+       login_user: "{{ LOGIN_USER }}"
+       login_password: "{{ LOGIN_PASSWORD }}"       
+       host_name: "{{ hostnames[item] }}"
+       host_groups:
+         - "{{ HOST_GROUPS }}"
+       link_templates:
+         - Template OS Windows
+       status: enabled
+       state: present
+       interfaces:
+         - type: 1
+           main: 1
+           useip: 0
+           ip: "{{IP}}"
+           dns: "{{ hostnames[item] }}.fcp.easyjet.local"
+           port: 10050
+     with_items: #
+       - "{{groups['OS_WINDOWS'] | default([]) }}"
