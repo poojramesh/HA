@@ -1,0 +1,12 @@
+---
+- name: Terminate Instance
+  ec2:
+    image: "{{ Vami }}"
+    instance_type: "{{ instance_type }}"
+    instance_id: "{{ instance_idno  }}"
+    key_name: "{{ vkey_name }}"
+    wait: yes
+    region: "{{ region_name }}"
+    state: absent
+  register: Rdb
+- debug: var=Rdb

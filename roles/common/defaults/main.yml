@@ -3,23 +3,23 @@ Vmgmt_vpc_id: "vpc-0b1727902a4183d52"
 Vmgmt_rt_id: "rtb-01ee683661b5c8007"
 Vregion: "us-west-2"
 Vvpc_range: "100.0.0.0/8"
-Vvpc_id: "vpc-07f30726ed7125df7"
-Vvpc_name: "EITND98"
-Vvpc_cidr: "100.6.32.0/20"
+Vvpc_id: "vpc-09cd019e478e7213c"
+Vvpc_name: "EITND131"
+Vvpc_cidr: "100.8.48.0/20"
 Vsubnet_cidr_pub: "100.0.10.0/24"
 Vsubnet_cidr_pri: "35.0.30.0/24"
-Vsubnet_cidr_nat: "100.6.44.0/24"
-Vnversion: 99
+Vsubnet_cidr_nat: "100.8.60.0/24"
+Vnversion: 132
 Vrt_name_pub: 
 Vrt_name_pri: 
 Vrt_name_nat: 
 Vigw_name: 
 
 #Security Groups
-Vwebsg_id: "sg-0b22c88d0455055a1"
-Vappsg_id: "sg-0e03377eab77d302a"
-Vdbsg_id: "sg-0c909a3c358f50f9c"
-Vpubsg_id: "sg-00ec4263b7a62e189"
+Vwebsg_id: "sg-0ff35c824024421bd"
+Vappsg_id: "sg-0667088faeb542f6a"
+Vdbsg_id: "sg-04e9d54acd911acf9"
+Vpubsg_id: "sg-09c7f420e1589e05e"
 
 
 #NAT Instance
@@ -37,9 +37,9 @@ Vinstance_type: "t2.micro"
 Vkey_name: "tth-keypair"
 Vkey_path: "/home/ec2-user/tth-keypair.pem"
 Vwebec2_name: "testweb"
-Vwebec2_ida: "[u'i-0fa9e165cb9456533']"
+Vwebec2_ida: "[u'i-06319b739de5165dc']"
 Vwebec2_idb: "[u'i-0cf64824c25b525cb']"
-Vwebec2_ipa: "[u'100.6.37.33']"
+Vwebec2_ipa: "[u'100.8.53.88']"
 Vwebec2_ipb: "[u'100.5.245.194']"
 Vwebsn_id: "subnet-44899b20"
 Vappec2_id: "[u'i-00d55f163210bc23f']"
@@ -49,21 +49,21 @@ Vapp_count: 2
 
 
 # for asg
-Vwebsn_ida: "subnet-0e11b38668cff03d7"
+Vwebsn_ida: "subnet-0badc044e44bba217"
 Vwebsn_idb: "subnet-0a3e7e6b930a6aa5f"
-Vsubnet_cidr_puba: "100.6.45.0/24"
-Vsubnet_cidr_pubb: "100.6.46.0/24"
+Vsubnet_cidr_puba: "100.8.61.0/24"
+Vsubnet_cidr_pubb: "100.8.62.0/24"
 
 Vweb_count: 2
 Vdbec2_name: "testdb"
-Vdbec2_id: "[u'i-01b33a0d8de259571']"
-Vdbec2_ip: "100.6.39.186"
-Vdbsn_id: "subnet-0230b4a504066cc6b"
+Vdbec2_id: "[u'i-07ce3ed9cc81e469e']"
+Vdbec2_ip: "100.8.55.24"
+Vdbsn_id: "subnet-0014a7a396f6fad8a"
 Vdb_count: 1
 
-Vnatsn_id: "subnet-04627ac32fa5f7c30"
-Vpubsn_ida: "subnet-0198b12c77c043cdb"
-Vpubsn_idb: "subnet-0e73c2982443c9a90"
+Vnatsn_id: "subnet-0fd81c2de83268e12"
+Vpubsn_ida: "subnet-0f1c0f8ada12c298c"
+Vpubsn_idb: "subnet-0a25b44230b17196f"
 
 
 #web Golden Image instances and AMI
@@ -72,21 +72,21 @@ Vwebimage_ip: "54.202.253.233"
 Vwebami: "ami-f665478e"
 Vversion: "2"
 Vproj_name: demo
-Vvpcpeer_id: "pcx-0a1971e99068aa36b"
-Vsubnet_cidr_priDB: "100.6.39.0/24"
-Vsubnet_cidr_weba: "100.6.37.0/24"
+Vvpcpeer_id: "pcx-0b6b1489c80449867"
+Vsubnet_cidr_priDB: "100.8.55.0/24"
+Vsubnet_cidr_weba: "100.8.53.0/24"
 Vsubnet_cidr_webb: "100.5.246.0/24"
 Vwebname: "HA_WEB"
 Vappname: "HA_APP"
 Vdbname: "HA_DB"
-Vsubnet_cidr_priAPPa: "100.6.38.0/24"
+Vsubnet_cidr_priAPPa: "100.8.54.0/24"
 Vsubnet_cidr_priAPPb: "100.5.248.0/24"
-Vappsn_ida: "subnet-0ba872e68ddd91fd4"
+Vappsn_ida: "subnet-031a0746262003c87"
 Vappsn_idb: "subnet-0b0588725bb0674e1"
-Vappec2_ida: "[u'i-08707599580f3e210']"
+Vappec2_ida: "[u'i-0d3739854fa154257']"
 Vappec2_idb: "[u'i-01a731a45270de5e5']"
-Vappec2_ipa: "[u'100.6.38.39']"
+Vappec2_ipa: "[u'100.8.54.77']"
 Vappec2_ipb: "[u'100.5.247.144']"
 Venvironment: "EI"
 Vstage: "TND"
-Vnatgw_id: "nat-032b62982647c3b25"
+Vnatgw_id: "nat-030322c16db164eec"

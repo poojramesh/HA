@@ -1,0 +1,6 @@
+---
+- name: Delete Elastic IP
+  ec2_eip:
+    ip: "{{ elastic_ip }}"
+    region: "{{ region_name }}"
+    state: absent

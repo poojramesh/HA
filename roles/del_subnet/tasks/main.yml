@@ -1,0 +1,8 @@
+---
+- name: Remove subnets
+  ec2_vpc_subnet:
+      state: absent
+      cidr: "{{ subnet_cidr }}"
+      vpc_id: "{{ vvpc_id }}"
+
+

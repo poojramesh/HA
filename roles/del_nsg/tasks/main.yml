@@ -1,0 +1,6 @@
+---
+
+- name: "Delete group by its id"
+  ec2_group:
+    group_id: "{{ nsg_id }}"
+    state: absent

@@ -1,0 +1,6 @@
+---
+- name: Delete Load Balancer
+  ec2_elb_lb:
+    name: "{{ vpc_name }}ELB"
+    state: absent
+    region: "{{ region_name }}"

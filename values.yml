@@ -1,0 +1,6 @@
+---
+  - hosts: localhost
+    connection: local
+    gather_facts: true
+    tasks:
+    - debug: msg="the value of the file is  {{lookup('file', '/home/ec2-user/hademo/roles/common/defaults/main.yml') }}"

@@ -1,0 +1,7 @@
+---
+# file:delete_peering.yml
+ - hosts: localhost
+   connection: local
+   gather_facts: true
+   roles:
+    - del_peering

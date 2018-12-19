@@ -1,0 +1,8 @@
+---
+- name: Delete VPC peering
+  ec2_vpc_peer:
+    region: "{{ region_name }}"
+    peering_id: "{{ peer_id }}"
+    state: absent
+  register: Rvpcpeer
+- debug: var=Rvpcpeer

@@ -1,0 +1,6 @@
+---
+- ec2_vpc:
+    state: absent
+    vpc_id: "{{ vvpc_id }}"
+    region: "{{ region_name }}"
+    resource_tags: { "Name" : "{{ vpc_name }}" }
